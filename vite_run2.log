@@ -1,0 +1,22 @@
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m289[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.215.41.24:[1m5173[22m/[39m
+[2m14:57:26[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/components/ToolWidgets.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m14:57:31[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/App.tsx, /@fs/E:/codebuddy_1/src/index.css, /@fs/E:/codebuddy_1/src/components/ChatWindow.tsx[22m
+[2m15:02:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/App.tsx, /@fs/E:/codebuddy_1/src/index.css, /@fs/E:/codebuddy_1/src/components/ChatWindow.tsx[22m
+[2m15:02:27[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/App.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m15:02:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/components/ChatWindow.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m15:02:45[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/components/ToolWidgets.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m15:02:46[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/components/ToolWidgets.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m15:02:46[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/components/ToolWidgets.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m15:07:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/@fs/E:/codebuddy_1/src/components/ChatWindow.tsx, /@fs/E:/codebuddy_1/src/index.css[22m
+[2m15:21:28[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mxinli/index.html[22m
+[2m15:21:28[22m [36m[1m[vite][22m[39m changed tsconfig file detected: e:\codebuddy_1\xinli\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m15:21:28[22m [36m[1m[vite][22m[39m changed tsconfig file detected: e:\codebuddy_1\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m15:21:28[22m [36m[1m[vite][22m[39m changed tsconfig file detected: E:\codebuddy_1\tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m15:21:28[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m15:21:28[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m15:21:28[22m [36m[1m[vite][22m[39m server restarted.
+The batch file cannot be found.

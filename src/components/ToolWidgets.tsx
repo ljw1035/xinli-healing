@@ -36,7 +36,7 @@ export const ToolWidgets: React.FC<ToolWidgetProps> = ({
       return <EmotionDiaryWidget args={args} onExecute={onExecute} isExecuted={isExecuted} resultData={resultData} />;
     default:
       return (
-        <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500 italic border border-slate-100">
+        <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500 italic border border-slate-100 dark:border-slate-700">
           正在执行未知工具: {toolName}
         </div>
       );
@@ -58,6 +58,7 @@ const SelfRatingWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => 
   const estimated = typeof args?.current_estimated === 'number' ? args.current_estimated : 5;
   
   const [score, setScore] = useState(estimated);
+  const [hoverScore, setHoverScore] = useState(0); // 用于星星悬停效果
 
   const getEmoji = (s: number) => {
     if (s <= 2) return '😢';
@@ -68,10 +69,18 @@ const SelfRatingWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => 
   };
 
   const getColor = (s: number) => {
-    if (s <= 3) return 'bg-rose-500';
-    if (s <= 5) return 'bg-amber-500';
-    if (s <= 7) return 'bg-emerald-500';
-    return 'bg-blue-500';
+    if (s <= 3) return 'from-rose-400 to-rose-500';
+    if (s <= 5) return 'from-amber-400 to-amber-500';
+    if (s <= 7) return 'from-emerald-400 to-emerald-500';
+    return 'from-blue-400 to-blue-500';
+  };
+
+  const getScoreLabel = (s: number) => {
+    if (s <= 2) return '极度低落';
+    if (s <= 4) return '比较低落';
+    if (s <= 6) return '一般';
+    if (s <= 8) return '不错';
+    return '非常好';
   };
 
   const handleSubmit = () => {
@@ -80,18 +89,34 @@ const SelfRatingWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => 
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 dark:border-purple-800 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-purple-500 text-white rounded-lg text-xs font-bold">🌡️</span>
         <h4 className="font-semibold text-slate-900 text-base">心情温度计</h4>
       </div>
 
-      <p className="text-sm text-slate-600 mb-4">{prompt}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{prompt}</p>
 
-      <div className="bg-white/80 rounded-xl p-5 mb-4 border border-purple-100/50">
+      <div className="bg-white dark:bg-slate-800/80 rounded-xl p-5 mb-4 border border-purple-100 dark:border-purple-800/50">
         <div className="text-center mb-4">
-          <span className="text-5xl">{getEmoji(score)}</span>
-          <div className="text-3xl font-bold text-purple-700 mt-2">{score} 分</div>
+          <span className="text-6xl">{getEmoji(score)}</span>
+          <div className={`text-3xl font-bold mt-2 bg-gradient-to-r ${getColor(score)} bg-clip-text text-transparent`}>{score} 分</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">{getScoreLabel(score)}</div>
+        </div>
+
+        {/* 星星点击评分 */}
+        <div className="flex justify-center space-x-1 mb-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
+            <button
+              key={star}
+              onClick={() => setScore(star)}
+              onMouseEnter={() => setHoverScore(star)}
+              onMouseLeave={() => setHoverScore(0)}
+              className="text-2xl focus:outline-none transition-transform hover:scale-125"
+            >
+              {star <= (hoverScore || score) ? '⭐' : '☆'}
+            </button>
+          ))}
         </div>
 
         {!isExecuted ? (
@@ -104,15 +129,23 @@ const SelfRatingWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => 
               onChange={(e) => setScore(parseInt(e.target.value))}
               className="w-full h-2 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-purple-500 mb-2"
             />
-            <div className="flex justify-between text-[10px] text-slate-400">
+            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
               <span>1分 · {minLabel}</span>
               <span>5分 · 一般</span>
               <span>10分 · {maxLabel}</span>
             </div>
           </>
         ) : (
-          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-            <div className={`h-full transition-all duration-500 ${getColor(resultData?.score || score)}`} style={{ width: `${(resultData?.score || score) * 10}%` }} />
+          <div className="space-y-3">
+            <div className="w-full h-4 bg-slate-100 dark:bg-slate-600 rounded-full overflow-hidden">
+              <div 
+                className={`h-full bg-gradient-to-r ${getColor(resultData?.score || score)} transition-all duration-1000 ease-out`} 
+                style={{ width: `${(resultData?.score || score) * 10}%` }}
+              />
+            </div>
+            <div className="text-center text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500">
+              当前情绪分数：<span className="font-bold text-purple-700">{(resultData?.score || score)} 分</span>
+            </div>
           </div>
         )}
       </div>
@@ -122,7 +155,7 @@ const SelfRatingWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => 
           确认我的心情分数
         </button>
       ) : (
-        <button disabled className="w-full py-2.5 bg-slate-100 text-purple-600 font-medium rounded-xl text-sm border border-purple-200 cursor-not-allowed">
+        <button disabled className="w-full py-2.5 bg-slate-100 dark:bg-slate-600 text-purple-600 font-medium rounded-xl text-sm border border-purple-200 cursor-not-allowed">
           ✓ 心情温度计已完成
         </button>
       )}
@@ -164,10 +197,10 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
   const allAnswered = answers.every(a => a >= 0);
 
   const getLevel = (score: number) => {
-    if (score <= 4) return { level: '正常范围', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' };
-    if (score <= 9) return { level: '轻度焦虑', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' };
+    if (score <= 4) return { level: '正常范围', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/30', border: 'border-emerald-200' };
+    if (score <= 9) return { level: '轻度焦虑', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/30', border: 'border-amber-200' };
     if (score <= 14) return { level: '中度焦虑', color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' };
-    return { level: '中重度焦虑', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' };
+    return { level: '中重度焦虑', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/30', border: 'border-rose-200' };
   };
 
   const handleSubmit = () => {
@@ -177,7 +210,7 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 dark:border-amber-800 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold">📋</span>
         <h4 className="font-semibold text-slate-900 text-base">GAD-7 焦虑自评量表</h4>
@@ -189,16 +222,16 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
       </div>
 
       <div className="space-y-4 mb-4">
-        <p className="text-xs text-slate-400 font-medium">{instruction}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">{instruction}</p>
         {/* 表头 */}
-        <div className="hidden sm:grid grid-cols-[1fr_repeat(4,80px)] gap-2 text-[10px] text-slate-400 font-semibold px-2">
+        <div className="hidden sm:grid grid-cols-[1fr_repeat(4,80px)] gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-semibold px-2">
           <span>题目</span>
           {GAD7_OPTIONS.map(o => <span key={o.score} className="text-center">{o.label}</span>)}
         </div>
         {GAD7_QUESTIONS.map((question, qi) => (
-          <div key={qi} className="bg-white/80 rounded-xl p-3 border border-amber-100/50">
+          <div key={qi} className="bg-white dark:bg-slate-800/80 rounded-xl p-3 border border-amber-100 dark:border-amber-800/50">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700 sm:w-[45%] shrink-0">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 sm:w-[45%] shrink-0">
                 {qi + 1}. {question}
               </span>
               <div className="flex gap-1.5 sm:gap-2 flex-1">
@@ -215,10 +248,10 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
                       isExecuted
                         ? resultData?.answers?.[qi] === opt.score
                           ? 'bg-amber-500 text-white border-amber-500'
-                          : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                          : 'bg-slate-50 dark:bg-slate-700 text-slate-300 border-slate-100 dark:border-slate-700 cursor-not-allowed'
                         : answers[qi] === opt.score
                           ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                          : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-amber-300 hover:bg-amber-50'
+                          : 'bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700 hover:border-amber-300 hover:bg-amber-50 dark:bg-amber-900/30'
                     }`}
                   >
                     {opt.label}
@@ -237,7 +270,7 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
             <span className="text-sm font-semibold">总分：{totalScore} / 21</span>
             <span className={`text-sm font-bold ${getLevel(totalScore).color}`}>{getLevel(totalScore).level}</span>
           </div>
-          <div className="w-full h-2 bg-white/50 rounded-full mt-2 overflow-hidden">
+          <div className="w-full h-2 bg-white dark:bg-slate-800/50 rounded-full mt-2 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 rounded-full ${
                 totalScore <= 4 ? 'bg-emerald-400' : totalScore <= 9 ? 'bg-amber-400' : totalScore <= 14 ? 'bg-orange-400' : 'bg-rose-400'
@@ -245,7 +278,7 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
               style={{ width: `${Math.min(totalScore / 21 * 100, 100)}%` }}
             />
           </div>
-          <p className="text-[10px] text-slate-400 mt-2">此结果仅为自我筛查参考，不能替代专业医学诊断</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">此结果仅为自我筛查参考，不能替代专业医学诊断</p>
         </div>
       )}
 
@@ -254,13 +287,13 @@ const Gad7AssessmentWidget: React.FC<{ args: any; onExecute: (r: string, d: any)
           onClick={handleSubmit}
           disabled={!allAnswered}
           className={`w-full py-2.5 text-sm font-semibold rounded-xl transition-all shadow-sm ${
-            allAnswered ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            allAnswered ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-slate-200 text-slate-400 dark:text-slate-500 cursor-not-allowed'
           }`}
         >
           {allAnswered ? `✓ 完成评估（总分 ${totalScore}）` : '请完成所有 7 题后再提交'}
         </button>
       ) : (
-        <button disabled className="w-full py-2.5 bg-slate-100 text-amber-600 font-medium rounded-xl text-sm border border-amber-200 cursor-not-allowed">
+        <button disabled className="w-full py-2.5 bg-slate-100 dark:bg-slate-600 text-amber-600 font-medium rounded-xl text-sm border border-amber-200 cursor-not-allowed">
           ✓ GAD-7 评估已完成（总分 {resultData?.total_score}/21 · {resultData?.level}）
         </button>
       )}
@@ -312,7 +345,7 @@ const CbtCognitiveRestructuringWidget: React.FC<{ args: any; onExecute: (r: stri
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-violet-500 text-white rounded-lg text-xs font-bold">🧠</span>
         <h4 className="font-semibold text-slate-900 text-base">CBT 认知重构表</h4>
@@ -321,18 +354,18 @@ const CbtCognitiveRestructuringWidget: React.FC<{ args: any; onExecute: (r: stri
 
       <div className="space-y-4 mb-4">
         {/* 情境 & 自动想法 (AI填充) */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-violet-100/50 space-y-3">
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-violet-100/50 space-y-3">
           <div>
             <span className="text-[10px] text-violet-500 font-semibold tracking-wider block mb-1">🔍 客观情境：</span>
-            <p className="text-sm text-slate-700">{situation}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200">{situation}</p>
           </div>
           <div>
             <span className="text-[10px] text-rose-500 font-semibold tracking-wider block mb-1">⚡ 自动消极想法：</span>
-            <p className="text-sm text-slate-700 font-medium">{automaticThought}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200 font-medium">{automaticThought}</p>
           </div>
           <div className="flex gap-3 text-xs">
-            <span className="text-slate-400">情绪与强度：<span className="text-slate-700">{emotionIntensity}</span></span>
-            <span className="text-slate-400">认知偏差：<span className="text-violet-600 font-semibold">{cognitiveDistortion}</span></span>
+            <span className="text-slate-400 dark:text-slate-500">情绪与强度：<span className="text-slate-700 dark:text-slate-200">{emotionIntensity}</span></span>
+            <span className="text-slate-400 dark:text-slate-500">认知偏差：<span className="text-violet-600 font-semibold">{cognitiveDistortion}</span></span>
           </div>
           {/* 认知偏差参考 */}
           <div className="flex flex-wrap gap-1 pt-1">
@@ -345,24 +378,24 @@ const CbtCognitiveRestructuringWidget: React.FC<{ args: any; onExecute: (r: stri
         </div>
 
         {/* 证据收集 (用户填写) */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-violet-100/50">
-          <span className="text-[10px] text-slate-500 font-semibold block mb-1">📝 支持这个想法的客观证据：</span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-violet-100/50">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold block mb-1">📝 支持这个想法的客观证据：</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-700">{resultData?.evidence_for || evidenceFor || '（未填写）'}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200">{resultData?.evidence_for || evidenceFor || '（未填写）'}</p>
           ) : (
             <textarea value={evidenceFor} onChange={(e) => setEvidenceFor(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-slate-200 focus:border-violet-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
+              className="w-full text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-violet-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
               placeholder={'有什么具体事实支持这个想法？注意区分"感觉"和"事实"…'} />
           )}
         </div>
 
-        <div className="bg-white/80 rounded-xl p-3.5 border border-emerald-100/50">
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-emerald-100/50">
           <span className="text-[10px] text-emerald-600 font-semibold block mb-1">✅ 反对这个想法的客观证据：</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-700">{resultData?.evidence_against || evidenceAgainst || '（未填写）'}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200">{resultData?.evidence_against || evidenceAgainst || '（未填写）'}</p>
           ) : (
             <textarea value={evidenceAgainst} onChange={(e) => setEvidenceAgainst(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-slate-200 focus:border-emerald-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
+              className="w-full text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-emerald-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
               placeholder="有什么事实与这个想法矛盾？如果朋友有同样想法你会怎么劝他？" />
           )}
         </div>
@@ -371,22 +404,22 @@ const CbtCognitiveRestructuringWidget: React.FC<{ args: any; onExecute: (r: stri
         <div className="bg-gradient-to-r from-violet-100/50 to-purple-100/50 rounded-xl p-3.5 border border-violet-200/50">
           <span className="text-[10px] text-violet-700 font-semibold block mb-1">✨ 更平衡、更现实的替代想法：</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-800 font-medium">{resultData?.balanced_thought || balancedThought || '（未填写）'}</p>
+            <p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{resultData?.balanced_thought || balancedThought || '（未填写）'}</p>
           ) : (
             <textarea value={balancedThought} onChange={(e) => setBalancedThought(e.target.value)}
-              className="w-full text-sm bg-white/80 border border-violet-200 focus:border-violet-500 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
+              className="w-full text-sm bg-white dark:bg-slate-800/80 border border-violet-200 focus:border-violet-500 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
               placeholder="综合考虑所有证据后，一个更客观、温和的想法是…" />
           )}
         </div>
 
         {/* 重新打分 */}
         {!isExecuted && (
-          <div className="bg-white/80 rounded-xl p-3.5 border border-slate-100">
-            <span className="text-[10px] text-slate-500 font-semibold block mb-2">📊 现在，这种情绪的强度还有几分？（1-10）</span>
+          <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-100 dark:border-slate-700">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold block mb-2">📊 现在，这种情绪的强度还有几分？（1-10）</span>
             <input type="range" min="1" max="10" value={changedIntensity}
               onChange={(e) => setChangedIntensity(parseInt(e.target.value))}
-              className="w-full h-1.5 bg-slate-100 rounded-lg accent-violet-500" />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+              className="w-full h-1.5 bg-slate-100 dark:bg-slate-600 rounded-lg accent-violet-500" />
+            <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-1">
               <span>1分 · 几乎没了</span>
               <span>{changedIntensity}分</span>
               <span>10分 · 依然强烈</span>
@@ -401,7 +434,7 @@ const CbtCognitiveRestructuringWidget: React.FC<{ args: any; onExecute: (r: stri
           ✨ 保存认知重构结果
         </button>
       ) : (
-        <button disabled className="w-full py-2.5 bg-slate-100 text-violet-600 font-medium rounded-xl text-sm border border-violet-200 cursor-not-allowed">
+        <button disabled className="w-full py-2.5 bg-slate-100 dark:bg-slate-600 text-violet-600 font-medium rounded-xl text-sm border border-violet-200 cursor-not-allowed">
           ✓ CBT 认知重构已完成
         </button>
       )}
@@ -449,18 +482,18 @@ const EmotionDiaryWidget: React.FC<{ args: any; onExecute: (r: string, d: any) =
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-rose-500 text-white rounded-lg text-xs font-bold">📝</span>
         <h4 className="font-semibold text-slate-900 text-base">情绪日记</h4>
         <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-semibold">每日自察</span>
       </div>
 
-      <p className="text-sm text-slate-600 mb-4">{prompt}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{prompt}</p>
 
       <div className="space-y-4 mb-4">
         {/* 情绪标签选择 */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-rose-100/50">
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-rose-100/50">
           <span className="text-[10px] text-rose-500 font-semibold block mb-2">🎭 今天主要有哪些情绪？（可多选）</span>
           <div className="flex flex-wrap gap-1.5">
             {allAvailableEmotions.map(emotion => {
@@ -474,7 +507,7 @@ const EmotionDiaryWidget: React.FC<{ args: any; onExecute: (r: string, d: any) =
                   className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all border ${
                     isSelected
                       ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-rose-300'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 hover:border-rose-300'
                   } ${isExecuted ? 'cursor-not-allowed' : ''}`}
                 >
                   {emotion}
@@ -485,51 +518,51 @@ const EmotionDiaryWidget: React.FC<{ args: any; onExecute: (r: string, d: any) =
         </div>
 
         {/* 情绪强度 */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-rose-100/50">
-          <span className="text-[10px] text-slate-500 font-semibold block mb-2">⚡ 情绪整体强度：<span className="text-rose-600 font-bold">{isExecuted ? resultData?.intensity : intensity} / 10</span></span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-rose-100/50">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold block mb-2">⚡ 情绪整体强度：<span className="text-rose-600 font-bold">{isExecuted ? resultData?.intensity : intensity} / 10</span></span>
           {!isExecuted ? (
             <input type="range" min="1" max="10" value={intensity}
               onChange={(e) => setIntensity(parseInt(e.target.value))}
-              className="w-full h-1.5 bg-slate-100 rounded-lg accent-rose-500" />
+              className="w-full h-1.5 bg-slate-100 dark:bg-slate-600 rounded-lg accent-rose-500" />
           ) : (
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-slate-100 dark:bg-slate-600 rounded-full overflow-hidden">
               <div className="bg-rose-400 h-full" style={{ width: `${(resultData?.intensity || intensity) * 10}%` }} />
             </div>
           )}
         </div>
 
         {/* 触发事件 */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-rose-100/50">
-          <span className="text-[10px] text-slate-500 font-semibold block mb-1">📍 今天是什么触发了这些情绪？</span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-rose-100/50">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold block mb-1">📍 今天是什么触发了这些情绪？</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-700">{resultData?.trigger || '（未填写）'}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200">{resultData?.trigger || '（未填写）'}</p>
           ) : (
             <textarea value={trigger} onChange={(e) => setTrigger(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-slate-200 focus:border-rose-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
+              className="w-full text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-rose-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={2}
               placeholder="比如：考试结果出来、和朋友发生了争执、什么都没发生但突然很丧…" />
           )}
         </div>
 
         {/* 身体感受 */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-rose-100/50">
-          <span className="text-[10px] text-slate-500 font-semibold block mb-1">🫀 身体有什么感觉？</span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-rose-100/50">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold block mb-1">🫀 身体有什么感觉？</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-700">{resultData?.body_feeling || '（未填写）'}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200">{resultData?.body_feeling || '（未填写）'}</p>
           ) : (
             <textarea value={bodyFeeling} onChange={(e) => setBodyFeeling(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-slate-200 focus:border-rose-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={1}
+              className="w-full text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-rose-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={1}
               placeholder="如：胸口闷、肩膀紧绷、头痛、手脚冰凉…" />
           )}
         </div>
 
         {/* 应对方式 */}
-        <div className="bg-white/80 rounded-xl p-3.5 border border-rose-100/50">
-          <span className="text-[10px] text-slate-500 font-semibold block mb-1">🛡️ 今天我用了什么方式来应对或照顾自己？</span>
+        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3.5 border border-rose-100/50">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-500 font-semibold block mb-1">🛡️ 今天我用了什么方式来应对或照顾自己？</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-700">{resultData?.coping || '（未填写）'}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200">{resultData?.coping || '（未填写）'}</p>
           ) : (
             <textarea value={coping} onChange={(e) => setCoping(e.target.value)}
-              className="w-full text-sm bg-slate-50 border border-slate-200 focus:border-rose-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={1}
+              className="w-full text-sm bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-rose-400 rounded-lg p-2.5 resize-none focus:outline-none transition-all" rows={1}
               placeholder="如：听了音乐、出去散步、和朋友聊天、深呼吸…" />
           )}
         </div>
@@ -541,7 +574,7 @@ const EmotionDiaryWidget: React.FC<{ args: any; onExecute: (r: string, d: any) =
           💌 保存今日情绪日记
         </button>
       ) : (
-        <button disabled className="w-full py-2.5 bg-slate-100 text-rose-600 font-medium rounded-xl text-sm border border-rose-200 cursor-not-allowed">
+        <button disabled className="w-full py-2.5 bg-slate-100 dark:bg-slate-600 text-rose-600 font-medium rounded-xl text-sm border border-rose-200 cursor-not-allowed">
           ✓ 情绪日记已记录（{new Date(resultData?.timestamp).toLocaleDateString?.() || '今日'}）
         </button>
       )}
@@ -650,17 +683,17 @@ const BreathingRelaxationWidget: React.FC<{ args: any; onExecute: (r: string, d:
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-blue-500 text-white rounded-lg text-xs font-bold">工具 1</span>
         <h4 className="font-semibold text-slate-900 text-base">{method}</h4>
         <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">{duration}</span>
       </div>
 
-      <p className="text-sm text-slate-600 mb-4">{expectedEffect}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{expectedEffect}</p>
 
       {/* 呼吸球核心动画区域 */}
-      <div className="flex flex-col items-center justify-center py-6 bg-white/60 backdrop-blur-sm rounded-xl mb-4 border border-white">
+      <div className="flex flex-col items-center justify-center py-6 bg-white dark:bg-slate-800/60 backdrop-blur-sm rounded-xl mb-4 border border-white">
         <div className="relative w-32 h-32 flex items-center justify-center mb-6">
           <div className={`absolute inset-0 bg-blue-300 rounded-full blur-xl opacity-30 transition-transform ${isPlaying && phase === 'inhale' ? 'scale-150 duration-[4000ms]' : isPlaying && phase === 'exhale' ? 'scale-100 duration-[8000ms]' : 'scale-100'}`} />
           <div className={`w-24 h-24 rounded-full bg-gradient-to-tr from-blue-400 via-sky-300 to-indigo-300 flex flex-col items-center justify-center text-white font-bold transition-all shadow-md select-none ${getBallScaleClass()}`}>
@@ -675,7 +708,7 @@ const BreathingRelaxationWidget: React.FC<{ args: any; onExecute: (r: string, d:
             {getPhaseText()}
           </div>
           {isPlaying && (
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">
               第 <span className="font-bold text-blue-600">{round}</span> / {totalRounds} 轮
             </div>
           )}
@@ -683,8 +716,8 @@ const BreathingRelaxationWidget: React.FC<{ args: any; onExecute: (r: string, d:
       </div>
 
       {/* 引导步骤列表 */}
-      <div className="text-xs text-slate-600 space-y-1 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-        <span className="font-semibold text-slate-700 block mb-1">训练指引：</span>
+      <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1 mb-4 bg-slate-50 dark:bg-slate-700 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+        <span className="font-semibold text-slate-700 dark:text-slate-200 block mb-1">训练指引：</span>
         {steps.map((step, idx) => (
           <div key={idx} className="flex items-center space-x-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
@@ -696,11 +729,11 @@ const BreathingRelaxationWidget: React.FC<{ args: any; onExecute: (r: string, d:
       {/* 操作按钮 */}
       <div className="flex justify-end space-x-2">
         {isExecuted ? (
-          <button disabled className="w-full py-2.5 bg-slate-200 text-slate-500 font-medium rounded-xl text-sm cursor-not-allowed">
+          <button disabled className="w-full py-2.5 bg-slate-200 text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium rounded-xl text-sm cursor-not-allowed">
             ✓ 放松训练已完成
           </button>
         ) : isPlaying ? (
-          <button onClick={stopTraining} className="w-full py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 font-medium rounded-xl text-sm transition-colors">
+          <button onClick={stopTraining} className="w-full py-2.5 bg-rose-50 dark:bg-rose-900/30 text-rose-600 hover:bg-rose-100 font-medium rounded-xl text-sm transition-colors">
             中止训练
           </button>
         ) : (
@@ -708,7 +741,7 @@ const BreathingRelaxationWidget: React.FC<{ args: any; onExecute: (r: string, d:
             <button onClick={startTraining} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
               🧘 开始放松训练
             </button>
-            <button onClick={handleComplete} className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition-colors">
+            <button onClick={handleComplete} className="py-2.5 px-4 bg-slate-100 dark:bg-slate-600 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-medium rounded-xl text-sm transition-colors">
               直接跳过并反馈
             </button>
           </div>
@@ -751,7 +784,7 @@ const ActClarificationWidget: React.FC<{ args: any; onExecute: (r: string, d: an
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-teal-600 text-white rounded-lg text-xs font-bold">工具 2</span>
         <h4 className="font-semibold text-slate-900 text-base">ACT 情绪价值澄清</h4>
@@ -759,15 +792,15 @@ const ActClarificationWidget: React.FC<{ args: any; onExecute: (r: string, d: an
 
       <div className="space-y-4 mb-4">
         {/* 当前痛苦 */}
-        <div className="bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-teal-100/50">
-          <span className="text-xs text-slate-400 font-medium tracking-wider block mb-1">🛑 当前痛苦的情绪：</span>
-          <p className="text-sm font-semibold text-slate-800">{painfulFeeling}</p>
+        <div className="bg-white dark:bg-slate-800/80 backdrop-blur-sm p-3.5 rounded-xl border border-teal-100/50">
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium tracking-wider block mb-1">🛑 当前痛苦的情绪：</span>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{painfulFeeling}</p>
         </div>
 
         {/* 隐含价值 */}
-        <div className="bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-teal-100/50">
+        <div className="bg-white dark:bg-slate-800/80 backdrop-blur-sm p-3.5 rounded-xl border border-teal-100/50">
           <span className="text-xs text-teal-600 font-medium tracking-wider block mb-1">💎 痛苦背后你真正珍视的价值（在乎什么）：</span>
-          <p className="text-sm font-medium text-slate-800 leading-relaxed">{underlyingValue}</p>
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100 leading-relaxed">{underlyingValue}</p>
         </div>
 
         {/* 正念接纳 */}
@@ -777,15 +810,15 @@ const ActClarificationWidget: React.FC<{ args: any; onExecute: (r: string, d: an
         </div>
 
         {/* 承诺行动 */}
-        <div className="bg-white/90 p-4 rounded-xl border border-teal-100 shadow-sm">
-          <span className="text-xs text-slate-400 font-medium tracking-wider block mb-1.5">🎯 承诺的微小行动计划：</span>
+        <div className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-teal-100 shadow-sm">
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium tracking-wider block mb-1.5">🎯 承诺的微小行动计划：</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-800 font-medium">{resultData?.committed_action || defaultCommittedAction}</p>
+            <p className="text-sm text-slate-800 dark:text-slate-100 font-medium">{resultData?.committed_action || defaultCommittedAction}</p>
           ) : (
             <textarea
               value={customAction}
               onChange={(e) => setCommittedAction(e.target.value)}
-              className="w-full text-sm font-medium bg-slate-50 border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-lg p-2.5 text-slate-800 focus:outline-none transition-all resize-none"
+              className="w-full text-sm font-medium bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:outline-none transition-all resize-none"
               rows={2}
             />
           )}
@@ -802,20 +835,20 @@ const ActClarificationWidget: React.FC<{ args: any; onExecute: (r: string, d: an
               onChange={(e) => setAccepted(e.target.checked)}
               className="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
             />
-            <span className="text-xs text-slate-600 leading-tight">
+            <span className="text-xs text-slate-600 dark:text-slate-300 leading-tight">
               我愿意允许焦虑暂时存在，接纳这些感受，并承诺践行以上的微小行动。
             </span>
           </label>
           <button
             onClick={handleSubmit}
             disabled={!accepted}
-            className={`w-full py-2.5 text-sm font-semibold rounded-xl transition-all shadow-sm ${accepted ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+            className={`w-full py-2.5 text-sm font-semibold rounded-xl transition-all shadow-sm ${accepted ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-md' : 'bg-slate-200 text-slate-400 dark:text-slate-500 cursor-not-allowed'}`}
           >
             ✓ 确立承诺，开始付诸行动
           </button>
         </div>
       ) : (
-        <button disabled className="w-full py-2.5 bg-slate-100 text-teal-600 font-medium rounded-xl text-sm border border-teal-200 cursor-not-allowed">
+        <button disabled className="w-full py-2.5 bg-slate-100 dark:bg-slate-600 text-teal-600 font-medium rounded-xl text-sm border border-teal-200 cursor-not-allowed">
           ✓ ACT 价值澄清已确认，承诺行动中
         </button>
       )}
@@ -857,7 +890,7 @@ const SfbtGoalWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => vo
   };
 
   return (
-    <div className="my-3 p-5 bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100 rounded-2xl shadow-sm text-slate-800">
+    <div className="my-3 p-5 bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100 rounded-2xl shadow-sm text-slate-800 dark:text-slate-100">
       <div className="flex items-center space-x-2 mb-3">
         <span className="p-1.5 bg-sky-500 text-white rounded-lg text-xs font-bold">工具 3</span>
         <h4 className="font-semibold text-slate-900 text-base">SFBT 例外搜寻与赋能小目标</h4>
@@ -865,36 +898,36 @@ const SfbtGoalWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => vo
 
       <div className="space-y-4 mb-4">
         {/* 成功例外 */}
-        <div className="bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-sky-100/50">
+        <div className="bg-white dark:bg-slate-800/80 backdrop-blur-sm p-3.5 rounded-xl border border-sky-100/50">
           <span className="text-xs text-sky-600 font-semibold tracking-wider block mb-1">🌟 寻找例外（事情稍好、你做得对的时候）：</span>
-          <p className="text-sm font-medium text-slate-800 leading-relaxed">{exception}</p>
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100 leading-relaxed">{exception}</p>
         </div>
 
         {/* 优势资源 */}
-        <div className="bg-white/80 backdrop-blur-sm p-3.5 rounded-xl border border-sky-100/50">
-          <span className="text-xs text-slate-400 font-medium tracking-wider block mb-1">🎒 提炼你自身可用的资源与力量：</span>
-          <p className="text-sm font-semibold text-slate-800">{resource}</p>
+        <div className="bg-white dark:bg-slate-800/80 backdrop-blur-sm p-3.5 rounded-xl border border-sky-100/50">
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium tracking-wider block mb-1">🎒 提炼你自身可用的资源与力量：</span>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{resource}</p>
         </div>
 
         {/* 最小行动目标 */}
-        <div className="bg-white/90 p-4 rounded-xl border border-sky-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-sky-100 shadow-sm">
           <span className="text-xs text-sky-600 font-semibold tracking-wider block mb-1.5">⛳ 设定当前可以立刻达到的最小目标：</span>
           {isExecuted ? (
-            <p className="text-sm text-slate-800 font-semibold">{resultData?.small_goal || defaultSmallGoal}</p>
+            <p className="text-sm text-slate-800 dark:text-slate-100 font-semibold">{resultData?.small_goal || defaultSmallGoal}</p>
           ) : (
             <textarea
               value={customGoal}
               onChange={(e) => setCustomGoal(e.target.value)}
-              className="w-full text-sm font-semibold bg-slate-50 border border-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-lg p-2.5 text-slate-800 focus:outline-none transition-all resize-none"
+              className="w-full text-sm font-semibold bg-slate-50 dark:bg-slate-700 border border-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-lg p-2.5 text-slate-800 dark:text-slate-100 focus:outline-none transition-all resize-none"
               rows={2}
             />
           )}
         </div>
 
         {/* 信心分数滑块 */}
-        <div className="bg-white/80 p-3.5 rounded-xl border border-sky-100/50">
+        <div className="bg-white dark:bg-slate-800/80 p-3.5 rounded-xl border border-sky-100/50">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-slate-500 font-medium">🎯 你对完成该小目标的信心指数：</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium">🎯 你对完成该小目标的信心指数：</span>
             <span className="text-sm font-bold text-sky-600">{isExecuted ? (resultData?.confidence_score || score) : score} / 10 分</span>
           </div>
           {!isExecuted ? (
@@ -904,14 +937,14 @@ const SfbtGoalWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => vo
               max="10"
               value={score}
               onChange={(e) => setScore(parseInt(e.target.value))}
-              className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-sky-500"
+              className="w-full h-1.5 bg-slate-100 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-sky-500"
             />
           ) : (
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-600 h-2 rounded-full overflow-hidden">
               <div className="bg-sky-500 h-full" style={{ width: `${(resultData?.confidence_score || score) * 10}%` }} />
             </div>
           )}
-          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+          <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-1">
             <span>完全没信心</span>
             <span>中等</span>
             <span>信心十足！</span>
@@ -927,7 +960,7 @@ const SfbtGoalWidget: React.FC<{ args: any; onExecute: (r: string, d: any) => vo
           ✨ 确定我的小目标并激活能量
         </button>
       ) : (
-        <button disabled className="w-full py-2.5 bg-slate-100 text-sky-600 font-medium rounded-xl text-sm border border-sky-200 cursor-not-allowed">
+        <button disabled className="w-full py-2.5 bg-slate-100 dark:bg-slate-600 text-sky-600 font-medium rounded-xl text-sm border border-sky-200 cursor-not-allowed">
           ✓ 例外探索已完成，小目标推进中
         </button>
       )}

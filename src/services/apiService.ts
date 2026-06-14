@@ -46,15 +46,25 @@ export class ApiService {
 
   /**
    * Check if a message matches suicidal or self-harm risk keywords
+   * Enhanced with more comprehensive crisis keywords and semantic patterns
    */
   checkCrisisRisk(text: string): boolean {
     const riskKeywords = [
-      '不想活', '自杀', '想死', '轻生', '割腕', '吃药自杀', '人间不值得', 
-      '放弃生命', '结束痛苦', '想走了解脱', '没有意义了想死', '自残',
-      '活着太痛苦了想死', '跳楼', '烧炭'
+      // 直接自杀/自伤表达
+      '不想活', '自杀', '想死', '轻生', '割腕', '吃药自杀', '人间不值得',
+      '放弃生命', '结束痛苦', '想解脱', '没有意义了想死', '自残',
+      '活着太痛苦了想死', '跳楼', '烧炭', '上吊', '割颈',
+      // 间接表达
+      '活着没意思', '不如死了算了', '我走了', '再见了世界', '来世再见',
+      '下辈子', '解脱吧', '停止痛苦', '想消失', '不存在就好了',
+      // 绝望表达
+      '看不到希望', '没有未来', '没人在乎我', '我是负担', '我不在了',
+      '你们会更好的', '不用管我了',
+      // 英文（支持中英文混合输入）
+      'suicide', 'kill myself', 'end my life', 'don\'t want to live', 'no hope'
     ];
     const cleanedText = text.toLowerCase().replace(/\s+/g, '');
-    return riskKeywords.some(keyword => cleanedText.includes(keyword));
+    return riskKeywords.some(keyword => cleanedText.includes(keyword.toLowerCase().replace(/\s+/g, '')));
   }
 
   /**
@@ -111,7 +121,7 @@ export class ApiService {
 
       // Transform API response message to local UI Message type
       const resultMessage: Message = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         role: resMessage.role,
         content: resMessage.content || ''
       };
@@ -357,10 +367,193 @@ export class ApiService {
       }, 800);
     });
   }
+  /**
+   * Streaming version: Send conversation to DeepSeek API with SSE streaming support.
+   * @param messages - conversation history
+   * @param callbacks - callbacks for handling stream events
+   */
+  async streamChatMessage(
+    messages: Message[],
+    callbacks: {
+      onContentDelta: (delta: string, fullContent: string) => void;
+      onToolCalls: (toolCalls: ToolCall[]) => void;
+      onError: (error: Error) => void;
+      onDone: () => void;
+    }
+  ): Promise<void> {
+    if (!this.apiKey) {
+      return this.simulateStreamResponse(messages, callbacks);
+    }
+
+    try {
+      const apiMessages = messages.map(msg => {
+        const payload: any = {
+          role: msg.role,
+          content: msg.content
+        };
+        if (msg.name) payload.name = msg.name;
+        if (msg.tool_call_id) payload.tool_call_id = msg.tool_call_id;
+        if (msg.tool_calls) payload.tool_calls = msg.tool_calls;
+        return payload;
+      });
+
+      const hasSystem = apiMessages.some((m: any) => m.role === 'system');
+      if (!hasSystem) {
+        apiMessages.unshift({ role: 'system', content: SYSTEM_PROMPT });
+      }
+
+      const response = await fetch(`${this.apiBaseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: apiMessages,
+          tools: TOOLS_DEFINITIONS,
+          tool_choice: 'auto',
+          temperature: 0.7,
+          stream: true
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`API 返回错误 (${response.status}): ${errText}`);
+      }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+      const toolCallsBuffer: any[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data: ')) continue;
+
+          const data = trimmed.slice(6);
+          if (data === '[DONE]') {
+            callbacks.onDone();
+            return;
+          }
+
+          try {
+            const json = JSON.parse(data);
+            const choice = json.choices?.[0];
+            if (!choice) continue;
+
+            const delta = choice.delta;
+            if (!delta) continue;
+
+            if (delta.content) {
+              fullContent += delta.content;
+              callbacks.onContentDelta(delta.content, fullContent);
+            }
+
+            if (delta.tool_calls) {
+              for (const tcDelta of delta.tool_calls) {
+                const idx = tcDelta.index ?? 0;
+                if (!toolCallsBuffer[idx]) {
+                  toolCallsBuffer[idx] = {
+                    id: '',
+                    type: 'function',
+                    function: { name: '', arguments: '' }
+                  };
+                }
+                if (tcDelta.id) toolCallsBuffer[idx].id = tcDelta.id;
+                if (tcDelta.function?.name) toolCallsBuffer[idx].function.name = tcDelta.function.name;
+                if (tcDelta.function?.arguments) toolCallsBuffer[idx].function.arguments += tcDelta.function.arguments;
+              }
+            }
+          } catch {
+            // skip malformed SSE chunks
+          }
+        }
+      }
+
+      if (toolCallsBuffer.length > 0) {
+        const toolCalls: ToolCall[] = toolCallsBuffer.map((tc: any) => ({
+          id: tc.id,
+          type: 'function' as const,
+          function: {
+            name: tc.function.name,
+            arguments: tc.function.arguments
+          }
+        }));
+        callbacks.onToolCalls(toolCalls);
+      }
+
+      callbacks.onDone();
+    } catch (error: any) {
+      console.error('DeepSeek API 流式请求失败，切换至模拟疗愈应答：', error);
+      try {
+        await this.simulateStreamResponse(messages, callbacks);
+      } catch (simError: any) {
+        callbacks.onError(simError);
+      }
+    }
+  }
+
+  /**
+   * Simulate streaming response for local/offline mode.
+   * Generates the full response first, then streams it character by character.
+   */
+  private async simulateStreamResponse(
+    messages: Message[],
+    callbacks: {
+      onContentDelta: (delta: string, fullContent: string) => void;
+      onToolCalls: (toolCalls: ToolCall[]) => void;
+      onError: (error: Error) => void;
+      onDone: () => void;
+    }
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      // First generate the full response (reuse same logic)
+      this.simulateLocalResponse(messages).then(({ message }) => {
+        const content = message.content || '';
+        const toolCalls = message.tool_calls;
+
+        // Stream out character by character with small delay
+        let fullContent = '';
+        let idx = 0;
+        const chunkSize = 2; // characters per tick
+        const tickMs = 25;     // ms per tick
+
+        const tick = () => {
+          if (idx >= content.length) {
+            // Content done, now handle tool calls
+            if (toolCalls && toolCalls.length > 0) {
+              callbacks.onToolCalls(toolCalls);
+            }
+            callbacks.onDone();
+            resolve();
+            return;
+          }
+          const chunk = content.slice(idx, idx + chunkSize);
+          idx += chunkSize;
+          fullContent += chunk;
+          callbacks.onContentDelta(chunk, fullContent);
+          setTimeout(tick, tickMs);
+        };
+
+        // Small initial delay to simulate "thinking"
+        setTimeout(tick, 600);
+      });
+    });
+  }
 }
 
 function parseFirstScore(messages: Message[]): number | null {
-  // Find the first self_rating_mood tool message and extract score
   const firstRating = [...messages].reverse().find(m => m.name === 'self_rating_mood');
   if (firstRating) {
     try {

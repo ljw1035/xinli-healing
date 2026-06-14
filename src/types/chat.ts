@@ -19,6 +19,7 @@ export interface Message {
   isCrisis?: boolean; // If matched safety self-harm/suicidal detection
   toolExecuted?: boolean; // Whether the user completed interaction on this tool widget
   toolResultData?: any; // The raw data returned by the tool interaction
+  isStreaming?: boolean;  // Whether this message is currently being streamed
   
   // 量化评估：前后情绪自评
   sessionScore?: {

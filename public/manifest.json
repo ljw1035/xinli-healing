@@ -1,0 +1,27 @@
+{
+  "name": "心声疗愈 - AI心理辅导智能体",
+  "short_name": "心声疗愈",
+  "description": "专业的 AI 循证心理辅导智能体，基于 CBT、ACT、SFBT、GAD-7 技术",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F6F7",
+  "theme_color": "#7FB3D5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["health", "mental health", "utilities"],
+  "screenshots": [],
+  "i18n": {
+    "default_locale": "zh-CN"
+  }
+}

@@ -1,12 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatWindow } from './components/ChatWindow';
 import { apiService } from './services/apiService';
-import { Heart, Key, Shield, Info, Lightbulb, TrendingUp, ClipboardList } from 'lucide-react';
+import { Heart, Key, Shield, Info, Lightbulb, TrendingUp, ClipboardList, Moon, Sun } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [apiKey, setApiKey] = useState(apiService.getApiKey());
   const [apiUrl, setApiUrl] = useState(apiService.getApiBaseUrl());
   const [showKeyConfig, setShowKeyConfig] = useState(!apiService.getApiKey());
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+  const [triggerTool, setTriggerTool] = useState<string | null>(null);
+
+  // 工具快捷触发映射
+  const toolTriggers: Record<string, string> = {
+    mood: '我想做一个心情温度计评分',
+    breathing: '我最近感觉很紧张，想试试呼吸放松训练',
+    gad7: '我最近总是感到焦虑和担心，想做一个焦虑评估',
+    act: '我感觉很内耗和迷茫，不知道自己真正在意什么',
+    cbt: '我脑子里总有很多消极的想法，想试着识别和挑战它们',
+    sfbt: '我总觉得什么都做不好，想找一些例外和资源',
+    diary: '我想写一篇情绪日记记录今天的心情',
+  };
+
+  const handleToolClick = (toolKey: string) => {
+    setTriggerTool(toolTriggers[toolKey] || '');
+  };
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('xinli_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('xinli_theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const handleSaveKey = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +51,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-[#F4F6F7] via-[#EAF2F8] to-[#F4F6F7] text-[#2C3E50] font-sans antialiased flex flex-col md:flex-row h-screen overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-tr from-[#F4F6F7] via-[#EAF2F8] to-[#F4F6F7] text-[#2C3E50] font-sans antialiased flex flex-col md:flex-row h-screen overflow-hidden dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 dark:text-slate-100">
       {/* 左侧引导面板 / 说明书 */}
-      <div className="w-full md:w-80 lg:w-96 bg-white/60 backdrop-blur-md border-r border-slate-200/50 p-6 flex flex-col justify-between shrink-0 overflow-y-auto">
+      <div className="w-full md:w-80 lg:w-96 bg-white/60 backdrop-blur-md border-r border-slate-200/50 p-6 flex flex-col justify-between shrink-0 overflow-y-auto dark:bg-slate-800/60 dark:border-slate-700/50">
         <div className="space-y-6">
           {/* Logo & Slogan */}
           <div className="flex items-center space-x-3">
@@ -32,10 +61,10 @@ export const App: React.FC = () => {
               <Heart className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800 tracking-wide flex items-center">
-                心声疗愈 <span className="ml-1.5 text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">v2.0</span>
+              <h1 className="text-lg font-bold text-slate-800 tracking-wide flex items-center dark:text-slate-100">
+                心声疗愈 <span className="ml-1.5 text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded dark:bg-indigo-900/50 dark:text-indigo-300">v2.0 ✅</span>
               </h1>
-              <p className="text-xs text-slate-400 font-medium">专业的 AI 循证心理辅导智能体</p>
+              <p className="text-xs text-slate-400 font-medium dark:text-slate-500">专业的 AI 循证心理辅导智能体</p>
             </div>
           </div>
 
@@ -59,14 +88,17 @@ export const App: React.FC = () => {
               工具测试与触发指南（7大工具）
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              智能体在对话中会自动识别并按需调用以下心理学工具。您也可以发送含有关键字的消息来主动触发：
+              智能体在对话中会自动识别并按需调用以下心理学工具。<span className="text-blue-600 font-semibold">👆 点击下方卡片即可快速触发</span>，也可以发送含有关键字的消息来主动调用：
             </p>
 
             <div className="space-y-2.5">
               {/* 工具0：自评温度计 */}
-              <div className="p-3 bg-purple-50/40 hover:bg-purple-50 rounded-xl border border-purple-100/50 transition-colors">
+              <div 
+                className="p-3 bg-purple-50/40 hover:bg-purple-100/60 rounded-xl border border-purple-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('mood')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-purple-700">🌡️ 情绪自评温度计</span>
+                  <span className="text-xs font-bold text-purple-700">🌡️ 情绪自评温度计 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-purple-500 bg-purple-100/60 px-1.5 py-0.2 rounded font-semibold">量化评估</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -75,9 +107,12 @@ export const App: React.FC = () => {
               </div>
 
               {/* 工具1：呼吸放松 */}
-              <div className="p-3 bg-blue-50/50 hover:bg-blue-50 rounded-xl border border-blue-100/50 transition-colors">
+              <div 
+                className="p-3 bg-blue-50/50 hover:bg-blue-100/60 rounded-xl border border-blue-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('breathing')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-blue-700">🧘 工具 1：呼吸放松训练</span>
+                  <span className="text-xs font-bold text-blue-700">🧘 工具 1：呼吸放松训练 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-blue-500 bg-blue-100/60 px-1.5 py-0.2 rounded font-semibold">生理调节</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -86,9 +121,12 @@ export const App: React.FC = () => {
               </div>
 
               {/* 工具2：GAD-7 */}
-              <div className="p-3 bg-amber-50/40 hover:bg-amber-50/75 rounded-xl border border-amber-100/50 transition-colors">
+              <div 
+                className="p-3 bg-amber-50/40 hover:bg-amber-100/60 rounded-xl border border-amber-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('gad7')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-amber-700">📋 工具 2：GAD-7 焦虑评估</span>
+                  <span className="text-xs font-bold text-amber-700">📋 工具 2：GAD-7 焦虑评估 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-amber-500 bg-amber-100/60 px-1.5 py-0.2 rounded font-semibold">标准化筛查</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -97,9 +135,12 @@ export const App: React.FC = () => {
               </div>
 
               {/* 工具3：ACT */}
-              <div className="p-3 bg-teal-50/40 hover:bg-teal-50/75 rounded-xl border border-teal-100/50 transition-colors">
+              <div 
+                className="p-3 bg-teal-50/40 hover:bg-teal-100/60 rounded-xl border border-teal-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('act')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-teal-700">💎 工具 3：ACT 价值澄清</span>
+                  <span className="text-xs font-bold text-teal-700">💎 工具 3：ACT 价值澄清 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-teal-500 bg-teal-100/60 px-1.5 py-0.2 rounded font-semibold">接纳承诺</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -108,9 +149,12 @@ export const App: React.FC = () => {
               </div>
 
               {/* 工具4：CBT */}
-              <div className="p-3 bg-violet-50/40 hover:bg-violet-50/75 rounded-xl border border-violet-100/50 transition-colors">
+              <div 
+                className="p-3 bg-violet-50/40 hover:bg-violet-100/60 rounded-xl border border-violet-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('cbt')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-violet-700">🧠 工具 4：CBT 认知重构表</span>
+                  <span className="text-xs font-bold text-violet-700">🧠 工具 4：CBT 认知重构表 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-violet-500 bg-violet-100/60 px-1.5 py-0.2 rounded font-semibold">想法检验</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -119,9 +163,12 @@ export const App: React.FC = () => {
               </div>
 
               {/* 工具5：SFBT */}
-              <div className="p-3 bg-sky-50/40 hover:bg-sky-50/75 rounded-xl border border-sky-100/50 transition-colors">
+              <div 
+                className="p-3 bg-sky-50/40 hover:bg-sky-100/60 rounded-xl border border-sky-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('sfbt')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-sky-700">🌟 工具 5：SFBT 例外搜寻</span>
+                  <span className="text-xs font-bold text-sky-700">🌟 工具 5：SFBT 例外搜寻 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-sky-500 bg-sky-100/60 px-1.5 py-0.2 rounded font-semibold">资源建构</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -130,9 +177,12 @@ export const App: React.FC = () => {
               </div>
 
               {/* 工具6：情绪日记 */}
-              <div className="p-3 bg-rose-50/40 hover:bg-rose-50/75 rounded-xl border border-rose-100/50 transition-colors">
+              <div 
+                className="p-3 bg-rose-50/40 hover:bg-rose-100/60 rounded-xl border border-rose-100/50 transition-all cursor-pointer active:scale-[0.98]"
+                onClick={() => handleToolClick('diary')}
+              >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-bold text-rose-700">📝 工具 6：情绪日记</span>
+                  <span className="text-xs font-bold text-rose-700">📝 工具 6：情绪日记 <span className="text-[9px] opacity-60 ml-1">✨</span></span>
                   <span className="text-[10px] text-rose-500 bg-rose-100/60 px-1.5 py-0.2 rounded font-semibold">日常记录</span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-normal">
@@ -167,8 +217,8 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* 底部信息 */}
-        <div className="mt-6 pt-4 border-t border-slate-200/50 text-[11px] text-slate-400 space-y-1">
+        {/* 底部信息与深色模式切换 */}
+        <div className="mt-6 pt-4 border-t border-slate-200/50 text-[11px] text-slate-400 space-y-3">
           <div className="flex items-center space-x-1">
             <Info className="w-3 h-3 text-slate-400 shrink-0" />
             <span>数据与密钥均 100% 留存在本地浏览器</span>
@@ -176,12 +226,34 @@ export const App: React.FC = () => {
           <div className="flex items-center space-x-1">
             <span>Powered by DeepSeek API | CBT · ACT · SFBT · GAD-7</span>
           </div>
+          
+          {/* 深色模式切换按钮 */}
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="w-full flex items-center justify-center space-x-2 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg transition-colors text-xs font-medium"
+          >
+            {isDarkMode ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>切换到浅色模式</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-indigo-600" />
+                <span>切换到深色模式</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
       {/* 右侧主聊天区 */}
       <div className="flex-1 h-full p-4 md:p-6 flex flex-col relative overflow-hidden">
-        <ChatWindow onApiKeyChange={() => setShowKeyConfig(true)} />
+        <ChatWindow 
+          onApiKeyChange={() => setShowKeyConfig(true)} 
+          triggerTool={triggerTool}
+          onToolTriggered={() => setTriggerTool(null)}
+        />
 
         {/* DeepSeek API Key 弹窗配置 */}
         {showKeyConfig && (
